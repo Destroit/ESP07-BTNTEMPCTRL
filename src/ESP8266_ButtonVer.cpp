@@ -10,6 +10,7 @@
 9.for SSD1306 OLED 
 */
 
+#include <Ticker.h>
 #include <ESP8266WiFi.h>       
 #include <PubSubClient.h>       
 #include <Wire.h>               
@@ -20,9 +21,9 @@
 //#include <WiFiUdp.h>            
 //#include <NTPClient.h>   
 
-const char* SSID = "SysCat_AP";
+const char* SSID = "Smart_Home";
 const char* PASSWORD = "shirokod"; 
-const char* MQTT_SERVER = "192.168.100.116";
+const char* MQTT_SERVER = "192.168.120.92";
 const char* MQTT_LOGIN = "mosquitto";
 const char* MQTT_PASSWORD = "mosquitto";
 const char* MQTT_SENDTPC =  "home/CurrentTemp";
@@ -66,17 +67,19 @@ OneWire DallasOneWire(ONEWIRE_BUS);
 DallasTemperature sensors(&DallasOneWire);
 OneButton button(BTN_PIN, true, true);
 SSD1306Wire display(0x3c, SDA, SCL, GEOMETRY_128_32);
-
 void offlineActionList();
+void displayPrepare();
+Ticker btnTimer;
 /*
 WiFiUDP ntpUdp;
 NTPClient timeClient(ntpUdp, "pool.ntp.org", UTC_OFFSET_SECONDS);
 */
 
-void IRAM_ATTR interruptbtn()
+void btntick()
 {
   button.tick();
 }
+
 void wifiSetup()
 {
   Serial.println("entering wifiSetup");
@@ -141,6 +144,8 @@ void setup()
   Serial.begin(115200);
   pinMode(RELAY_PIN, OUTPUT);  
 
+  btnTimer.attach(0.6, btntick);
+
   randomSeed(micros());
 
   sensors.begin();
@@ -159,7 +164,6 @@ void setup()
   
   client.setServer(MQTT_SERVER, MQTT_PORT);
   client.setCallback(recievedTemp);
-  attachInterrupt(digitalPinToInterrupt(BTN_PIN), interruptbtn, CHANGE);
 }
 
 void displayPrepare()
